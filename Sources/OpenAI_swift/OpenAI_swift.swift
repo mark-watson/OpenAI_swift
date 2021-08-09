@@ -31,6 +31,7 @@ func openAiHelper(body: String)  -> Array<Dictionary<String,String>> {
         if let data = data, let s = String(data: data, encoding: .utf8) {
             print("++ Response data string:\n \(s)")
             content = s
+            CFRunLoopStop(CFRunLoopGetMain())
         }
      }
     print("++ task:", task)
