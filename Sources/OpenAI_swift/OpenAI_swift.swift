@@ -1,31 +1,16 @@
 import Foundation
 
+let openai_key = ProcessInfo.processInfo.environment["OPENAI_KEY"]!
+
 let openAiHost = "https://api.openai.com/v1/engines/davinci/completions"
 
-func openAiHelper [body: String] {
-    
-}
-(defn- openai-helper [body]
-  (let [json-results
-        (client/post
-          "https://api.openai.com/v1/engines/davinci/completions"
-          {:accept :json
-           :headers
-                   {"Content-Type"  "application/json"
-                    "Authorization" (str "Bearer " (System/getenv "OPENAI_KEY"))
-                    }
-           :body   body
-           })]
-    ((first ((json/read-str (json-results :body)) "choices")) "text")))
 
-
-public func sparqlDbPedia(query: String) -> Array<Dictionary<String,String>> {
-    return SparqlEndpointHelpter(query: query, endPointUri: "https://dbpedia.org/sparql?query=") }
-
-public func sparqlWikidata(query: String) -> Array<Dictionary<String,String>> {
-    return SparqlEndpointHelpter(query: query, endPointUri: "https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=") }
+public func completions(promptText: String, maxTokens: Int = 25) -> Array<Dictionary<String,String>> {
+    let body: String = "{\"prompt\": \"" + promptText + "\", \"max_tokens\": \(maxTokens)" + "}"
+    return openAiHelper(body: body)}
 
 func openAiHelper(body: String)  -> Array<Dictionary<String,String>> {
+    print("++ body:", body)
     var ret = Set<Dictionary<String,String>>();
     var content = "{}"
 
@@ -33,19 +18,25 @@ func openAiHelper(body: String)  -> Array<Dictionary<String,String>> {
     var request = URLRequest(url: requestUrl)
     request.httpMethod = "POST"
     request.httpBody = body.data(using: String.Encoding.utf8);
-    
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.setValue("Bearer " + openai_key, forHTTPHeaderField: "Authorization")
+    print("++ request.allHTTPHeaderFields:", request.allHTTPHeaderFields!)
+    print("++ openai_key:", openai_key)
     let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
+        print("++ response:", response!)
         if let error = error {
-            print("Error accessing OpenAI servers: \(error)")
+            print("-->> Error accessing OpenAI servers: \(error)")
             return
         }
         if let data = data, let s = String(data: data, encoding: .utf8) {
-            print("Response data string:\n \(s)")
+            print("++ Response data string:\n \(s)")
             content = s
         }
      }
-     task.resume()
-    
+    print("++ task:", task)
+    task.resume()
+    CFRunLoopRun()
+    print("++ content:", content)
     let json = try? JSONSerialization.jsonObject(with: Data(content.utf8), options: [])
     if let json2 = json as! Optional<Dictionary<String, Any?>> {
         if let head = json2["head"] as? Dictionary<String, Any> {
