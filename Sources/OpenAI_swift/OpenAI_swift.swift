@@ -4,6 +4,9 @@ let openai_key = ProcessInfo.processInfo.environment["OPENAI_KEY"]!
 
 let openAiHost = "https://api.openai.com/v1/engines/davinci/completions"
 
+public func summarize(text: String, maxTokens: Int = 40) -> String {
+    let body: String = "{\"prompt\": \"" + text + "\", \"max_tokens\": \(maxTokens), \"presence_penalty\": 0.0, \"temperature\": 0.3, \"top_p\": 1.0, \"frequency_penalty\": 0.0}"
+    return openAiHelper(body: body)}
 
 public func questionAnsweering(question: String) -> String {
     let body: String = "{\"prompt\": \"nQ: " + question + " nA:\", \"max_tokens\": 25, \"presence_penalty\": 0.0, \"temperature\": 0.3, \"top_p\": 1.0, \"frequency_penalty\": 0.0 , \"stop\": [\"\\n\"]}"
@@ -33,7 +36,6 @@ func openAiHelper(body: String)  -> String {
             return
         }
         if let data = data, let s = String(data: data, encoding: .utf8) {
-            print("++ s:", s)
             content = s
             CFRunLoopStop(CFRunLoopGetMain())
         }
