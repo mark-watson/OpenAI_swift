@@ -43,7 +43,7 @@ func openAiHelper(body: String)  -> String {
     task.resume()
     CFRunLoopRun()
     let c = String(content)
-    let i1 = c.range(of: "\"text\": ")
+    let i1 = c.range(of: "\"text\":")
     if let r1 = i1 {
         let i2 = c.range(of: "\"index\":")
         if let r2 = i2 {
