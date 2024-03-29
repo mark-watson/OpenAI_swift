@@ -4,13 +4,11 @@ let openai_key = ProcessInfo.processInfo.environment["OPENAI_KEY"]!
 
 let openAiHost = "https://api.openai.com/v1/chat/completions"
 
-public func summarize(text: String, maxTokens: Int = 40) -> String {
-    //let body: String = "{\"prompt\": \"" + text + "\", \"max_tokens\": \(maxTokens), \"presence_penalty\": 0.0, \"temperature\": 0.3, \"top_p\": 1.0, \"frequency_penalty\": 0.0}"
-    let body: String = "{\"messages\": [ {\"role\": \"user\"," + " \"content\": \"Summarize the following text: " + text + "\", \"max_tokens\":\(maxTokens)}], \"model\": \"gpt-3.5-turbo\"}"
+public func summarize(text: String) -> String {
+    let body: String = "{\"messages\": [ {\"role\": \"user\"," + " \"content\": \"Summarize the following text: " + text + "\"}], \"model\": \"gpt-3.5-turbo\"}"
    return openAiHelper(body: body)}
 
 public func questionAnswering(question: String) -> String {
-    //let body: String = "{\"prompt\": \"nQ: " + question + " nA:\", \"max_tokens\": 25, \"presence_penalty\": 0.0, \"temperature\": 0.3, \"top_p\": 1.0, \"frequency_penalty\": 0.0 , \"stop\": [\"\\n\"]}"
     let body: String = "{\"messages\": [ {\"role\": \"user\"," + " \"content\": \"Answer the question: " + question + "\"}], \"model\": \"gpt-3.5-turbo\"}"
     let answer = openAiHelper(body: body)
     if let i1 = answer.range(of: "nQ:") {
@@ -19,10 +17,9 @@ public func questionAnswering(question: String) -> String {
     }
     return answer}
 
-public func completions(promptText: String, maxTokens: Int = 25) -> String {
+public func completions(promptText: String) -> String {
     let body: String = "{\"messages\": [ {\"role\": \"user\"," + " \"content\": \"Continue the following text: " + promptText + "\"}], \"model\": \"gpt-3.5-turbo\"}"
-    //let body: String = "{\"prompt\": \"" + promptText + "\", \"max_tokens\": \(maxTokens),  \"model\": \"gpt-3.5-turbo\" }"
-    print("**>> body: ", body)
+    //print("**>> body: ", body)
     return openAiHelper(body: body)}
 
 func openAiHelper(body: String)  -> String {
