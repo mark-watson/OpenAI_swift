@@ -6,7 +6,7 @@ let openAiHost = "https://api.openai.com/v1/chat/completions"
 
 public func summarize(text: String, maxTokens: Int = 40) -> String {
     //let body: String = "{\"prompt\": \"" + text + "\", \"max_tokens\": \(maxTokens), \"presence_penalty\": 0.0, \"temperature\": 0.3, \"top_p\": 1.0, \"frequency_penalty\": 0.0}"
-    let body: String = "{\"messages\": [ {\"role\": \"user\"," + " \"content\": \"Summarize the following text: " + text + "\"}], \"model\": \"gpt-3.5-turbo\"}"
+    let body: String = "{\"messages\": [ {\"role\": \"user\"," + " \"content\": \"Summarize the following text: " + text + "\", \"max_tokens\":\(maxTokens)}], \"model\": \"gpt-3.5-turbo\"}"
    return openAiHelper(body: body)}
 
 public func questionAnswering(question: String) -> String {
