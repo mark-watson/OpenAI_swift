@@ -1,36 +1,59 @@
 import Foundation
 
 let openai_key = ProcessInfo.processInfo.environment["OPENAI_KEY"]!
-
 let openAiHost = "https://api.openai.com/v1/chat/completions"
 
-public func summarize(text: String) -> String {
-    let body: String = "{\"messages\": [ {\"role\": \"user\"," + " \"content\": \"Summarize the following text: " + text + "\"}], \"model\": \"gpt-3.5-turbo\"}"
-   return openAiHelper(body: body)}
+public func summarize(text: String, maxTokens: Int = 40) -> String {
+    let messages = [
+        ["role": "system", "content": "You are a helpful assistant that summarizes text concisely."],
+        ["role": "user", "content": text]
+    ]
+    return openAiHelper(messages: messages, maxTokens: maxTokens)
+}
 
 public func questionAnswering(question: String) -> String {
-    let body: String = "{\"messages\": [ {\"role\": \"user\"," + " \"content\": \"Answer the question: " + question + "\"}], \"model\": \"gpt-3.5-turbo\"}"
-    let answer = openAiHelper(body: body)
-    if let i1 = answer.range(of: "nQ:") {
-        return String(answer[answer.startIndex..<i1.lowerBound])
-        //return String(answer.prefix(i1.lowerBound))
-    }
-    return answer}
+    let messages = [
+        ["role": "system", "content": "You are a helpful assistant that answers questions directly and concisely."],
+        ["role": "user", "content": question]
+    ]
+    return openAiHelper(messages: messages, maxTokens: 25)
+}
 
-public func completions(promptText: String) -> String {
-    let body: String = "{\"messages\": [ {\"role\": \"user\"," + " \"content\": \"Continue the following text: " + promptText + "\"}], \"model\": \"gpt-3.5-turbo\"}"
-    //print("**>> body: ", body)
-    return openAiHelper(body: body)}
+public func completions(promptText: String, maxTokens: Int = 25) -> String {
+    let messages = [
+        ["role": "user", "content": promptText]
+    ]
+    return openAiHelper(messages: messages, maxTokens: maxTokens)
+}
 
-func openAiHelper(body: String)  -> String {
+func openAiHelper(messages: [[String: String]], maxTokens: Int = 25, temperature: Double = 0.3) -> String {
     var ret = ""
     var content = "{}"
+    
+    let requestBody: [String: Any] = [
+        "model": "gpt-3.5-turbo",
+        "messages": messages,
+        "max_tokens": maxTokens,
+        "temperature": temperature,
+        "presence_penalty": 0.0,
+        "frequency_penalty": 0.0,
+        "top_p": 1.0
+    ]
+    
     let requestUrl = URL(string: openAiHost)!
     var request = URLRequest(url: requestUrl)
     request.httpMethod = "POST"
-    request.httpBody = body.data(using: String.Encoding.utf8);
+    
+    do {
+        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+    } catch {
+        print("Error creating request body: \(error)")
+        return ret
+    }
+    
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.setValue("Bearer " + openai_key, forHTTPHeaderField: "Authorization")
+    
     let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
         if let error = error {
             print("-->> Error accessing OpenAI servers: \(error)")
@@ -41,17 +64,22 @@ func openAiHelper(body: String)  -> String {
             CFRunLoopStop(CFRunLoopGetMain())
         }
     }
+    
     task.resume()
     CFRunLoopRun()
-    let c = String(content)
-    print("**>> \(c)")
-    let i1 = c.range(of: "\"text\":")
-    if let r1 = i1 {
-        let i2 = c.range(of: "\"index\":")
-        if let r2 = i2 {
-            ret = String(String(String(c[r1.lowerBound..<r2.lowerBound]).dropFirst(9)).dropLast(2))
-        }
+    
+    //let c = String(content)
+    //print("DEBUG: openAiHelper: c=\(c)")
+    
+    // Parse the response to get the assistant's message
+    if let data = content.data(using: .utf8),
+       let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+       let choices = json["choices"] as? [[String: Any]],
+       let firstChoice = choices.first,
+       let message = firstChoice["message"] as? [String: Any],
+       let content = message["content"] as? String {
+        ret = content
     }
+    
     return ret
 }
-
