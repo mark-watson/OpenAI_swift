@@ -31,7 +31,7 @@ func openAiHelper(messages: [[String: String]], maxTokens: Int = 25, temperature
     var content = "{}"
     
     let requestBody: [String: Any] = [
-        "model": "gpt-3.5-turbo",
+        "model": "gpt-4o-mini",
         "messages": messages,
         "max_tokens": maxTokens,
         "temperature": temperature,
@@ -82,4 +82,62 @@ func openAiHelper(messages: [[String: String]], maxTokens: Int = 25, temperature
     }
     
     return ret
+}
+
+public func embeddings(someText: String) -> [Float] {
+    var embeddings: [Float] = [1.23]
+    let embeddingsHost = "https://api.openai.com/v1/embeddings"
+    
+    let requestBody: [String: Any] = [
+        "model": "text-embedding-ada-002",
+        "input": someText
+    ]
+    
+    let requestUrl = URL(string: embeddingsHost)!
+    var request = URLRequest(url: requestUrl)
+    request.httpMethod = "POST"
+    
+    do {
+        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+    } catch {
+        print("Error creating request body: \(error)")
+        return embeddings
+    }
+    
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.setValue("Bearer " + openai_key, forHTTPHeaderField: "Authorization")
+    
+    var content = "{}"
+    let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
+        if let error = error {
+            print("-->> Error accessing OpenAI servers: \(error)")
+            return
+        }
+        if let data = data, let s = String(data: data, encoding: .utf8) {
+            content = s
+            CFRunLoopStop(CFRunLoopGetMain())
+        }
+    }
+    
+    task.resume()
+    CFRunLoopRun()
+    
+    // Parse the response to get the embedding vector
+    if let data = content.data(using: .utf8) {
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            if let dataArray = json["data"] as? [[String: Any]],
+               let firstItem = dataArray.first,
+               let embeddingArray = firstItem["embedding"] as? [NSNumber] {
+                
+                // Convert NSNumber array to [Float]
+                embeddings = embeddingArray.map { number in Float(truncating: number) }
+                print("Successfully extracted \(embeddings.count) embeddings")
+            } else {
+                print("Failed to extract embedding array")
+            }
+        } else {
+            print("Failed to parse JSON")
+        }
+    }    
+    return embeddings
 }
