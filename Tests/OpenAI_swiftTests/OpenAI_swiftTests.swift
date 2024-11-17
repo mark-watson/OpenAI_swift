@@ -4,8 +4,8 @@
     final class OpenAI_swiftTests: XCTestCase {
         func testExample() {
             print("Starting tests...")
-            let embedings = embeddings(someText: "Congress passed tax laws.")
-            print(embedings[..<min(10, embedings.count)])
+            let embeds = OpenAI.embeddings(text: "Congress passed tax laws.")
+            print(embeds[..<min(10, embeds.count)])
             let prompt = "He walked to the river and looked at"
             let ret = completions(promptText: prompt)
             print("** ret from OpenAI API call:", ret)
